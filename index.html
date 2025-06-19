@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор Ипотеки</title>
+    <style>
+
+        html, body {
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            width: 100%;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+        }
+
+        .container {
+            width: 350px;
+            margin: 20px auto;
+            padding: 10px 20px;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 30px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 16px;
+        }
+
+        input[type="number"],
+        input[type="text"] {
+            -moz-appearance: textfield;
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+        }
+
+        input[type="radio"] {
+            margin: 5px;
+            margin-top: 0;
+        }
+
+        button {
+            background-color: #5cb85c;
+            color: white;
+            padding: 12px 24px;
+            width: 100%;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            display: block;
+            margin: 15px auto;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        #results {
+            padding: 15px;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+            font-size: 16px;
+        }
+
+        #results h2 {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        #results p {
+            margin-bottom: 8px;
+        }
+
+        #results span {
+            font-weight: bold;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-content: center;
+            padding: 6px 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Калькулятор Ипотеки</h1>
+
+    <label for="loanAmount">Сумма кредита:</label>
+    <input type="text" id="loanAmount" required>
+
+    <label for="interestRate">Процентная ставка (% годовых):</label>
+    <input type="text" id="interestRate" required>
+
+    <label for="loanTerm">Срок кредита (лет):</label>
+    <input type="text" id="loanTerm" value="30" required>
+
+    <label for="monthlyPayment">Ежемесячный платеж (необязательно):</label>
+    <input type="text" id="monthlyPayment">
+
+    <label>Вид ипотеки:</label>
+    <div class="checkbox-container">
+        <input type="radio" id="annuity" name="mortgageType" value="annuity" checked>
+        <label for="annuity">Аннуитетная</label>
+         <input type="radio" id="differentiated" name="mortgageType" value="differentiated">
+        <label for="differentiated">Дифференцированная</label>
+    </div>
+    
+    <div id="results">
+        <p>Минимальный платеж: <span id="minPayment"></span> руб.</p>
+        <p>Срок выплаты кредита: <span id="paymentTerm"></span> лет</p>
+        <p>Сумма выплат: <span id="totalPayment"></span> руб.</p>
+        <p>Переплата: <span id="overpayment"></span> руб.</p>
+    </div>
+
+    <button onclick="calculateMortgage()">Рассчитать</button>
+</div>
+
+
+<script>
+    const loanAmountInput = document.getElementById("loanAmount");
+    const interestRateInput = document.getElementById("interestRate");
+    const loanTermInput = document.getElementById("loanTerm");
+    const monthlyPaymentInput = document.getElementById("monthlyPayment");
+    const annuityRadio = document.getElementById("annuity");
+    const differentiatedRadio = document.getElementById("differentiated");
+
+    // Функция для сохранения данных в localStorage
+    function saveData() {
+        localStorage.setItem('loanAmount', loanAmountInput.value);
+        localStorage.setItem('interestRate', interestRateInput.value);
+        localStorage.setItem('loanTerm', loanTermInput.value);
+        localStorage.setItem('monthlyPayment', monthlyPaymentInput.value);
+        localStorage.setItem('mortgageType', document.querySelector('input[name="mortgageType"]:checked').value);
+    }
+
+    // Функция для загрузки данных из localStorage
+    function loadData() {
+        loanAmountInput.value = localStorage.getItem('loanAmount') || '';
+        interestRateInput.value = localStorage.getItem('interestRate') || '';
+        loanTermInput.value = localStorage.getItem('loanTerm') || '30'; // Default value
+        monthlyPaymentInput.value = localStorage.getItem('monthlyPayment') || '';
+
+        const mortgageType = localStorage.getItem('mortgageType');
+        if (mortgageType === 'annuity') {
+            annuityRadio.checked = true;
+        } else if (mortgageType === 'differentiated') {
+            differentiatedRadio.checked = true;
+        }
+    }
+
+    // Вызов функции loadData при загрузке страницы
+    window.onload = loadData;
+
+    // При изменении любого поля вызываем функцию saveData
+    loanAmountInput.addEventListener('input', saveData);
+    interestRateInput.addEventListener('input', saveData);
+    loanTermInput.addEventListener('input', saveData);
+    monthlyPaymentInput.addEventListener('input', saveData);
+    annuityRadio.addEventListener('change', saveData);
+    differentiatedRadio.addEventListener('change', saveData);
+
+    function formatInput(inputElement) {
+        let value = inputElement.value.replace(/\D/g, ''); // Убираем все, кроме цифр
+        value = beautifyNumbers(value); // Добавляем пробелы
+        console.log(value)
+        inputElement.value = value;
+    }
+
+    // Функция для преобразования форматированного числа в число без пробелов
+    function parseFormattedNumber(formattedNumber) {
+        return parseFloat(formattedNumber.replace(/\s/g, '')) || 0;
+    }
+
+    // Добавляем обработчики событий input для форматирования
+    loanAmountInput.addEventListener('input', function() { formatInput(this); });
+    interestRateInput.addEventListener('input', function() { formatInput(this); });
+    monthlyPaymentInput.addEventListener('input', function() { formatInput(this); });
+
+    function beautifyNumbers(number) {
+      const numStr = String(number);
+      const parts = numStr.split('.');
+      let integerPart = parts[0];
+      const decimalPart = parts.length > 1 ? '.' + parts[1] : '';
+      let formattedIntegerPart = '';
+      let count = 0;
+      for (let i = integerPart.length - 1; i >= 0; i--) {
+        formattedIntegerPart = integerPart[i] + formattedIntegerPart;
+        count++;
+        if (count === 3 && i !== 0) {
+          formattedIntegerPart = ' ' + formattedIntegerPart;
+          count = 0;
+        }
+      }
+      return formattedIntegerPart + decimalPart;
+    }
+
+    function calculateMortgage() {
+        const loanAmount = parseFormattedNumber(loanAmountInput.value);
+        const interestRate = parseFormattedNumber(interestRateInput.value) / 100 / 12;
+        const loanTerm = parseInt(loanTermInput.value);
+        const monthlyPaymentInputValue = parseFormattedNumber(monthlyPaymentInput.value);
+        const mortgageType = document.querySelector('input[name="mortgageType"]:checked').value;
+
+        let minMonthlyPayment;
+        let totalPayments = 0; // Инициализируем
+        let overpayment;
+        let paymentTermMonths = 0; // Инициализируем
+
+        // 1. Рассчитываем минимальный ежемесячный платеж
+        if (mortgageType === "annuity") {
+            minMonthlyPayment = loanAmount * interestRate / (1 - Math.pow(1 + interestRate, -loanTerm * 12));
+        } else {
+            // Дифференцированный платеж - минимальный платеж в первый месяц
+            minMonthlyPayment = (loanAmount / (loanTerm * 12)) + (loanAmount * interestRate);
+        }
+
+        // 2. Рассчитываем остальные параметры
+        let remainingLoan = loanAmount; // Важно инициализировать здесь
+        let monthlyPayment;
+
+        if (mortgageType === "annuity") {
+            if (isNaN(monthlyPaymentInputValue) || monthlyPaymentInputValue <= 0) {
+                // Если пользователь не ввел платеж, используем минимальный
+                monthlyPayment = minMonthlyPayment;
+                paymentTermMonths = loanTerm * 12;
+                totalPayments = monthlyPayment * paymentTermMonths;
+                overpayment = totalPayments - loanAmount;
+            } else {
+                monthlyPayment = monthlyPaymentInputValue;
+
+                while (remainingLoan > 0) {
+                    let interestPayment = remainingLoan * interestRate;
+                    let principalPayment = monthlyPayment - interestPayment;
+
+                    if (principalPayment <= 0) {
+                        alert("Слишком маленький ежемесячный платеж. Увеличьте его.");
+                        return;
+                    }
+
+                    // Корректировка последнего платежа
+                    let actualPrincipalPayment = Math.min(principalPayment, remainingLoan);
+                    let actualMonthlyPayment = interestPayment + actualPrincipalPayment;
+
+                    totalPayments += actualMonthlyPayment;
+                    remainingLoan -= actualPrincipalPayment;
+                    paymentTermMonths++;
+
+                    if (paymentTermMonths > 1200) {
+                        alert("Срок погашения превышает 100 лет. Увеличьте ежемесячный платеж.");
+                        return;
+                    }
+
+                }
+                overpayment = totalPayments - loanAmount;
+            }
+
+        } else { // Дифференцированный платеж
+            if (isNaN(monthlyPaymentInputValue) || monthlyPaymentInputValue <= 0) {
+                for (let i = 0; i < loanTerm * 12; i++) {
+                    let interestPayment = remainingLoan * interestRate;
+                    let principalPayment = loanAmount / loanTerm / 12;
+
+                    let actualPrincipalPayment = Math.min(principalPayment, remainingLoan);
+                    let actualMonthlyPayment = interestPayment + actualPrincipalPayment;
+
+                    totalPayments += actualMonthlyPayment;
+                    remainingLoan -= actualPrincipalPayment;
+                    paymentTermMonths++;
+                }
+                overpayment = totalPayments - loanAmount;
+
+            } else {
+                monthlyPayment = monthlyPaymentInputValue;
+                let principalPaymentBase = loanAmount / (loanTerm * 12);
+
+                while (remainingLoan > 0) {
+                    let interestPayment = remainingLoan * interestRate;
+
+                    // Корректировка последнего платежа
+                    let principalPayment = Math.min(principalPaymentBase, remainingLoan);  // Principal часть от дифф. платежа.
+                    let actualPrincipalPayment = Math.min((monthlyPayment - interestPayment), remainingLoan); // Если введенный платеж больше дифф., гасим сколько можем.
+
+                    if (monthlyPayment <= interestPayment) {
+                        alert("Слишком маленький ежемесячный платеж. Увеличьте его.");
+                        return;
+                    }
+
+                    let actualMonthlyPayment = interestPayment + actualPrincipalPayment;
+
+                    totalPayments += actualMonthlyPayment;
+                    remainingLoan -= actualPrincipalPayment;
+                    paymentTermMonths++;
+
+                    if (paymentTermMonths > 1200) {
+                         alert("Срок погашения превышает 100 лет. Увеличьте ежемесячный платеж.");
+                         return;
+                    }
+
+                }
+                overpayment = totalPayments - loanAmount;
+            }
+        }
+
+        // 3. Отображаем результаты
+        document.getElementById("minPayment").innerText = beautifyNumbers(Math.round(minMonthlyPayment));
+        document.getElementById("paymentTerm").innerText = (paymentTermMonths / 12).toFixed(2);
+        document.getElementById("totalPayment").innerText = beautifyNumbers(Math.round(totalPayments));
+        document.getElementById("overpayment").innerText = beautifyNumbers(Math.round(overpayment));
+
+        document.getElementById("results").style.display = "block";
+    }
+
+</script>
+
+</body>
+</html>
