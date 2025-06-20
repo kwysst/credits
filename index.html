@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <title>Калькулятор Ипотеки</title>
     <style>
 
@@ -13,8 +14,6 @@
 
         html, body {
             display: flex;
-            justify-content: center;
-            align-items: center;
             height: 100%;
             width: 100%;
         }
@@ -25,7 +24,7 @@
 
         .container {
             width: 350px;
-            margin: 20px auto;
+            margin: auto;
             padding: 10px 20px;
             border: 1px solid #dee2e6;
             border-radius: 5px;
@@ -85,6 +84,7 @@
         }
 
         #results {
+            position: relative;
             padding: 15px;
             border: 1px solid #dee2e6;
             border-radius: 5px;
@@ -110,6 +110,121 @@
             align-content: center;
             padding: 6px 0;
         }
+
+          .modal {
+            display: none; /* Скрыто по умолчанию */
+            position: fixed; /* Фиксированное положение */
+            z-index: 1; /* Поверх всего */
+            left: 0;
+            top: 0;
+            width: 100%; /* Полная ширина */
+            height: 100%; /* Полная высота */
+            overflow: auto; /* Прокрутка, если много контента */
+            background-color: rgba(0,0,0,0.4); /* Полупрозрачный фон */
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 0 auto; /* Центрирование по вертикали */
+            padding: 20px;
+            translate: 0% 10%;
+            border: 1px solid #888;
+            width: 80%; /* Занимает 80% ширины экрана */
+            max-height: 80%; /* Максимальная высота */
+            overflow: auto; /* Добавляем прокрутку для содержимого */
+            position: relative;
+        }
+
+        .close {
+            position: absolute;
+            top: 0;
+            right: 0;
+            color: #ffffff;
+            font-size: 34px;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 10px;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .payment-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .payment-table th, .payment-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .payment-table th {
+            background-color: #f2f2f2;
+            text-align: center;
+        }
+
+        .payment-table td {
+            text-wrap-mode: nowrap;
+        }
+
+           
+
+
+        /* Для Chrome, Safari и Edge */
+        ::-webkit-scrollbar {
+        width: 2px;
+        }
+
+        ::-webkit-scrollbar-track {
+        background: transparent; /* Или любой другой цвет фона */
+        }
+
+        ::-webkit-scrollbar-thumb {
+        background-color: #ccc; /* Серый цвет */
+        border-radius: 1px; /* Для закругления, если нужно */
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+        background-color: #bbb; /* Цвет при наведении */
+        }
+
+        /* Для Firefox */
+        /* Это требует дополнительных настроек и может не работать во всех случаях */
+        /* По умолчанию Firefox использует стили операционной системы */
+
+        /* Общий стиль (работает для всех браузеров, где поддерживается настройка полосы прокрутки) */
+        * {
+        scrollbar-width: thin; /* 'auto' или 'thin' */
+        scrollbar-color: #ccc transparent; /* thumb and track color */
+        }
+
+
+
+
+         #showStatistics {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            font-size: 24px;
+            color: #28a745; /* Зеленый цвет, как у кнопки */
+            cursor: pointer;
+            transition: color 0.3s;
+            background: none;
+            border: none;
+            padding: 0;
+        }
+
+        #showStatistics:hover {
+            color: #218838; /* Более темный зеленый при наведении */
+        }
+
+
     </style>
 </head>
 <body>
@@ -142,9 +257,28 @@
         <p>Срок выплаты кредита: <span id="paymentTerm"></span> лет</p>
         <p>Сумма выплат: <span id="totalPayment"></span> руб.</p>
         <p>Переплата: <span id="overpayment"></span> руб.</p>
+        <span id="showStatistics"><i class="fas fa-question-circle"></i></span>
     </div>
 
-    <button onclick="calculateMortgage()">Рассчитать</button>
+    <button id="calcButton" onclick="calculateMortgage()">Рассчитать</button>
+
+    <div id="paymentStatisticsModal" class="modal">
+        <div class="modal-content">
+            <table class="payment-table" id="paymentTable">
+                <thead>
+                <tr>
+                    <th>Дата</th>
+                    <th>Сумма выплат</th>
+                    <th>Остаток тела кредита</th>
+                    <th>Переплата</th>
+                </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+        <span class="close">&times;</span>
+    </div>
 </div>
 
 
@@ -155,6 +289,11 @@
     const monthlyPaymentInput = document.getElementById("monthlyPayment");
     const annuityRadio = document.getElementById("annuity");
     const differentiatedRadio = document.getElementById("differentiated");
+    const calcButton = document.getElementById("calcButton");
+    const showStatisticsButton = document.getElementById("showStatistics");
+    const paymentStatisticsModal = document.getElementById("paymentStatisticsModal");
+    const paymentTable = document.getElementById("paymentTable").getElementsByTagName('tbody')[0]; // Corrected line
+    const closeModalSpan = document.querySelector(".close");
 
     // Функция для сохранения данных в localStorage
     function saveData() {
@@ -183,14 +322,7 @@
     // Вызов функции loadData при загрузке страницы
     window.onload = loadData;
 
-    // При изменении любого поля вызываем функцию saveData
-    loanAmountInput.addEventListener('input', saveData);
-    interestRateInput.addEventListener('input', saveData);
-    loanTermInput.addEventListener('input', saveData);
-    monthlyPaymentInput.addEventListener('input', saveData);
-    annuityRadio.addEventListener('change', saveData);
-    differentiatedRadio.addEventListener('change', saveData);
-
+   
     function formatInput(inputElement) {
         let value = inputElement.value.replace(/\D/g, ''); // Убираем все, кроме цифр
         value = beautifyNumbers(value); // Добавляем пробелы
@@ -207,6 +339,15 @@
     loanAmountInput.addEventListener('input', function() { formatInput(this); });
     interestRateInput.addEventListener('input', function() { formatInput(this); });
     monthlyPaymentInput.addEventListener('input', function() { formatInput(this); });
+
+     // При изменении любого поля вызываем функцию saveData
+    loanAmountInput.addEventListener('input', saveData);
+    interestRateInput.addEventListener('input', saveData);
+    loanTermInput.addEventListener('input', saveData);
+    monthlyPaymentInput.addEventListener('input', saveData);
+    annuityRadio.addEventListener('change', saveData);
+    differentiatedRadio.addEventListener('change', saveData);
+
 
     function beautifyNumbers(number) {
       const numStr = String(number);
@@ -342,6 +483,89 @@
         document.getElementById("results").style.display = "block";
     }
 
+
+    showStatisticsButton.onclick = function() {
+        paymentStatisticsModal.style.display = "block";
+        generatePaymentSchedule();
+    }
+
+    closeModalSpan.onclick = function() {
+        paymentStatisticsModal.style.display = "none";
+    }
+
+    window.onclick = function(event) {
+        if (event.target == paymentStatisticsModal) {
+            paymentStatisticsModal.style.display = "none";
+        }
+    }
+
+    function generatePaymentSchedule() {
+        calcButton.click();
+        // Очищаем таблицу
+        paymentTable.innerHTML = "";
+
+        const loanAmount = parseFormattedNumber(loanAmountInput.value);
+        const interestRate = parseFormattedNumber(interestRateInput.value) / 100 / 12;
+        const loanTerm = parseInt(loanTermInput.value);
+        const monthlyPaymentInputValue = parseFormattedNumber(monthlyPaymentInput.value);
+        const mortgageType = document.querySelector('input[name="mortgageType"]:checked').value;
+
+        let minMonthlyPayment;
+        if (mortgageType === "annuity") {
+            minMonthlyPayment = loanAmount * interestRate / (1 - Math.pow(1 + interestRate, -loanTerm * 12));
+        } else {
+            minMonthlyPayment = (loanAmount / (loanTerm * 12)) + (loanAmount * interestRate);
+        }
+
+        let remainingLoan = loanAmount;
+        let totalPayments = 0;
+        let totalInterestPaid = 0; // Накопленная сумма процентов (переплата)
+        let currentDate = new Date();
+        let monthlyPayment;
+
+
+        if (mortgageType === "annuity") {
+            monthlyPayment = isNaN(monthlyPaymentInputValue) || monthlyPaymentInputValue <= 0 ? minMonthlyPayment : monthlyPaymentInputValue;
+        }
+
+        let paymentCount = 0;
+        while (remainingLoan > 0 && paymentCount < 1200) {
+
+            let interestPayment = remainingLoan * interestRate;
+            let principalPayment;
+
+            if (mortgageType === "annuity") {
+                principalPayment = monthlyPayment - interestPayment;
+            } else {
+                 principalPayment = loanAmount / (loanTerm * 12); // Для дифф. платежа часть тела кредита постоянна
+            }
+
+            let actualPrincipalPayment = Math.min(principalPayment, remainingLoan);
+            let actualMonthlyPayment = interestPayment + actualPrincipalPayment;
+            totalPayments += actualMonthlyPayment;
+
+
+            remainingLoan -= actualPrincipalPayment;
+
+            totalInterestPaid += interestPayment;  // Суммируем выплаченные проценты
+
+            // Создаем строку таблицы
+            let row = paymentTable.insertRow();
+            let dateCell = row.insertCell();
+            let totalPaymentCell = row.insertCell();
+            let remainingLoanCell = row.insertCell();
+            let overpaymentCell = row.insertCell();
+
+            let formattedDate = currentDate.toLocaleDateString();
+            dateCell.innerText = formattedDate;
+            remainingLoanCell.innerText = beautifyNumbers(Math.round(remainingLoan));
+            totalPaymentCell.innerText = beautifyNumbers(Math.round(totalPayments));
+            overpaymentCell.innerText = beautifyNumbers(Math.round(totalInterestPaid)); // Отображаем сумму процентов
+
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            paymentCount++;
+        }
+    }
 </script>
 
 </body>
